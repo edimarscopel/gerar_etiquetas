@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Etiqueta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        .etiqueta {
+            width: 10cm;
+            border: 2px solid black;
+            padding: 15px;
+            text-align: center;
+            margin: auto;
+            display: none;
+            font-size: 16px;
+        }
+        .descricao {
+            text-align: justify;
+            margin-top: 5px;
+        }
+        .negrito {
+            font-weight: bold;
+        }
+        .protocolo {
+            font-size: 50px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        .revogacao {
+            border: 2px solid black;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            width: 10cm;
+            margin: auto;
+            display: none;
+        }
+        .campo-preenchimento {
+            display: inline-block;
+            width: 75%;
+            border-bottom: 1px solid black;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="form-container">
+        <label>Protocolo: <input type="text" id="protocolo"></label><br>
+        <label>Tipo de Documento: <input type="text" id="tipo"></label><br>
+        <label>Descrição: <textarea id="descricao" rows="4"></textarea></label><br>
+        <label>Data: <input type="date" id="data"></label><br>
+        <label>Prazo: <input type="text" id="prazo"></label><br>
+        <label>
+            <input type="checkbox" id="revogacao" > Informações de Revogação
+        </label><br>
+        <button onclick="gerarEtiqueta()">Confirmar e Gerar</button>
+    </div>
+    
+    <div id="etiqueta" class="etiqueta"></div>
+    <div id="revogacao-box" class="revogacao"></div>
+
+    <script>
+        function obterParametros() {
+            const params = new URLSearchParams(window.location.search);
+            document.getElementById("protocolo").value = params.get("protocolo") || "";
+            document.getElementById("tipo").value = params.get("tipo") || "";
+            document.getElementById("descricao").value = params.get("descricao") || "";
+            document.getElementById("data").value = params.get("data") || "";
+            document.getElementById("prazo").value = params.get("prazo") || "";
+        }
+        
+        function formatarData(data) {
+            if (!data || data.toLowerCase() === "indeterminado") {
+                return "Indeterminado";
+            }
+
+            let partes = data.split("-"); // Divide "YYYY-MM-DD" em [YYYY, MM, DD]
+            let dataCorrigida = new Date(partes[0], partes[1] - 1, partes[2]); // Ajusta o fuso local
+
+            // Formata no estilo "06 de janeiro de 2025"
+            return dataCorrigida.toLocaleDateString("pt-BR", { 
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            });
+        }
+
+
+        function gerarEtiqueta() {
+            let protocolo = document.getElementById("protocolo").value.trim();
+            let tipo = document.getElementById("tipo").value.trim();
+            let descricao = document.getElementById("descricao").value.trim();
+            let data = document.getElementById("data").value.trim();
+            let prazo = document.getElementById("prazo").value.trim() || "Indeterminado";
+            let revogacao = document.getElementById("revogacao").checked;
+            
+            if (!protocolo || !tipo || !descricao || !data) {
+                alert("Todos os campos, exceto prazo, são obrigatórios!");
+                return;
+            }
+            
+            let etiquetaHTML = `
+                <div class="protocolo">${protocolo}</div>
+                <div class="negrito" style="margin-top: 25px;">${tipo}</div>
+                <div class="descricao">${descricao}</div>
+                <div style="margin-top: 10px;"><span class="negrito">Data de emissão:</span> ${formatarData(data)}</div>
+                <div><span class="negrito">Prazo:</span> ${formatarData(prazo)}</div>
+            `;
+            
+            document.getElementById("etiqueta").innerHTML = etiquetaHTML;
+            document.getElementById("form-container").style.display = "none";
+            document.getElementById("etiqueta").style.display = "block";
+
+            if (revogacao) {
+                document.getElementById("revogacao-box").innerHTML = `
+                    <div class="negrito">REVOGADO</div>
+                    <div style="text-align: left; margin-top: 10px;"><span class="negrito">Protocolo:</span> <span class="campo-preenchimento"></span></div>
+                    <div style="text-align: left; margin-top: 10px;"><span class="negrito">Data:</span> <span>______/______/_________</span></div>
+                `;
+                document.getElementById("revogacao-box").style.display = "block";
+            } else {
+                document.getElementById("revogacao-box").style.display = "none";
+            }
+            window.print();
+        }
+        
+        window.onload = obterParametros;
+    </script>
+</body>
+</html>
